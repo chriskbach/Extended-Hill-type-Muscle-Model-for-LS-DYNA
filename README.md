@@ -3,17 +3,17 @@ This is an open-source muscle model for the commercial finite element analysis s
 
 For a detailed description of the model see:
 
-> C. Kleinbach, O. Martynenko, J. Promies, D.F.B. Haeufle, J. Fehr, S. Schmitt: Implementation and Validation of the Extended Hill-type Muscle Model with Robust Routing Capabilities in LS-DYNA for Active Human Body Models, Biomedical Engineering Online.
+> C. Kleinbach, O. Martynenko, J. Promies, D.F.B. Haeufle, J. Fehr, S. Schmitt: Implementation and Validation of the Extended Hill-type Muscle Model with Robust Routing Capabilities in LS-DYNA for Active Human Body Models, Biomedical Engineering Online,2017.
 > 
 > **Abstract**:
 > 
-> An extended four element Hill-type muscle model with serial damping and eccentric force-velocity relation is implemented into the general-purpose finite element (FE) simulation software LS-DYNA as a user material for truss elements.
-> This material model is verified and validated with three different sets of mammalian experimental data taken from the literature.
-> It is compared to the *MAT_MUSCLE (*MAT_156) Hill-type muscle model already existing in LS-DYNA, which is currently used in finite element Human Body Models (HBMs).
-> An application example with a FE arm model extracted from the ViVA Open-HBM is given, taking into account physiological muscle paths.
-> The simulation results show better material model accuracy, calculation robustness and improved muscle routing capability compared to *MAT_156.
-> The FORTRAN source code for the user material subroutine `dyn21.f` and the muscle parameters for all simulations conducted in contribution with the implemented extended four element Hill-type muscle model, including a full example, are given as supplementary material.
-> This enables a quick application of the proposed material model in LS-DYNA, especially in Active Human Body Models (AHBMs).
+> An extended four element Hill-type muscle model with serial damping, eccentric force-velocity relation, integrated Ca2+ dependent activation dynamics and routing capability is implemented into the general-purpose finite element (FE) simulation software LS-DYNA as a user material for truss elements.
+This material model is verified and validated with three different sets of mammalian experimental data, taken from the literature.
+It is compared to the *MAT_MUSCLE (*MAT_156) Hill-type muscle model already existing in LS-DYNA , which is currently used in finite element Human Body Models (HBMs).
+An application example with an arm model extracted from the FE ViVA OpenHBM is given, taking into account physiological muscles paths.
+The simulation results show better material model accuracy, calculation robustness and improved muscle routing capability compared to *MAT_156.
+The FORTRAN source code for the user material subroutine `dyn21.f` and the muscle parameters for all simulations, conducted in the study, are given as supplementary material under a open source license.
+This enables a quick application of the proposed material model in LS-DYNA, especially in Active Human Body Models (AHBMs).
 
 If you use this material model for scientific purposes, please cite the original research article.
 
