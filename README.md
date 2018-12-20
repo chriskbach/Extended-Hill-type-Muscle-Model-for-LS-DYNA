@@ -2,6 +2,7 @@
 This is an open-source muscle model for the commercial finite element analysis software LS-DYNA.
 
 For a detailed description of the model see:
+> O. Martynenko, F. Kempter, C. Kleinbach, S. Schmitt, J. Fehr: To Be defined
 
 > C. Kleinbach, O. Martynenko, J. Promies, D.F.B. Haeufle, J. Fehr, S. Schmitt: Implementation and Validation of the Extended Hill-type Muscle Model with Robust Routing Capabilities in LS-DYNA for Active Human Body Models, Biomedical Engineering Online, 2017.
 > 
@@ -23,9 +24,7 @@ If you use this material model for scientific purposes, please cite the original
 	* commented version of the `dyn21.f`-file
 	* patchfile
 2. Example
-	* isometric contraction of the cat soleus muscle. Run the `main.k`-file.
-3. Simulation Data
-	* simulation results as shown in the research paper. The units are [N,m,s].
+	* head-fall test setup of the ViVA HBM with neck musculature using the Extended-Hill-type-Muscle-Model. Run the `main.k`-file.
 
 The commented version of the source code is a stripped version of the full `dyn21.f`-file.
 You have to copy the source code in the appropriate sections of the `dyn21.f` File provided by your LS-DYNA distributor.
@@ -51,9 +50,10 @@ With modifications it should compile also with other versions of LS-DYNA.
 
 ### Changelog 
 
-[v2.0] - 2019-01-01 
-* total muscle length is set to part length (enables routing via part_averaged)
-* added muscle-level controllers (EQ-point theroy and reflex)
+[v2.0] - 2019-xx-xx 
+* total muscle length is set to the part length (enables routing via part_averaged)
+* added internal muscle-level controller (EQ-point theory and reflex)
+* ringbuffer using history variables
 
 [v1.0] - 2017-07-12
 * initial muscle model implementation in LS-Dyna 
