@@ -49,13 +49,13 @@ was used. You can also check the beginning of the `dyn21.f`-file, which should b
 
 With modifications it should compile also with other versions of LS-DYNA.
 
-##### Changelog 
+### Changelog 
 
-[2.0.0] - 2019-01-01 
+[v2.0] - 2019-01-01 
 * total muscle length is set to part length (enables routing via part_averaged)
 * added muscle-level controllers (EQ-point theroy and reflex)
 
-[1.0.0] 
+[v1.0] - 2017-07-12
 * initial muscle model implementation in LS-Dyna 
 * find detailed description in C. Kleinbach, O. Martynenko, J. Promies, D.F.B. Haeufle, J. Fehr, S. Schmitt: Implementation and Validation of the Extended Hill-type Muscle Model with Robust Routing Capabilities in LS-DYNA for Active Human Body Models, Biomedical Engineering Online, 2017.
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.826209.svg)](https://doi.org/10.5281/zenodo.826209)
+* [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.826209.svg)](https://doi.org/10.5281/zenodo.826209)
