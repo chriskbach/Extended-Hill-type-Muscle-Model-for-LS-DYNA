@@ -1,17 +1,36 @@
-2254c2254,2255
+2270,2271c2270,2273
+<    41   call umat41 (cm(mx+1),eps,sig,epsp,hsv,dt1,capa,'tbeam',tt,
 <      1   temper,failel,crv,a(lcma),0,elsiz,idele)
 ---
+>    41   call umat41 (lft,cm(mx+1),eps,sig,epsp,hsv,dt1,capa,'tbeam',tt,
 >      1   temper,failel,crv,a(lcma),0,elsiz,idele,r_mem(dm_x),
->      2   r_mem(dm_v),r_mem(dm_a),i,d1,d2,d3)
-2396a2398,2435
+>      2   r_mem(dm_v),r_mem(dm_a),i,d1,d2,d3,NHISVAR,
+>      3   no_hsvs)
+2414,2415c2416,2469
+<       subroutine umat41 (cm,eps,sig,epsp,hsv,dt1,capa,etype,tt,
+<      1 temper,failel,crv,cma,qmat,elsiz,idele)
+---
+> C
 > C
 > C % If you use this material model for scientific purposes, please cite
-> C % the original research article:
-> C % C. Kleinbach, O. Martynenko, J. Promies, D.F.B. Haeufle, J. Fehr,
+> C % the original research articles:
+> C % 1) C. Kleinbach, O. Martynenko, J. Promies, D.F.B. Haeufle, J. Fehr,
 > C % S. Schmitt: Implementation and Validation of the Extended Hill-type
 > C % Muscle Model with Robust Routing Capabilities in LS-DYNA for Active
 > C % Human Body Models, Biomedical Engineering Online, 2017.
-> C %
+> C % 
+> C % 2) O. Martynenko, F. Kempter, C. Kleinbach, S. Schmitt and J. Fehr:
+> C % Development of an internal physiological muscle controller within an 
+> C % open‐source Hill‐type material model in LS‐DYNA, Proceedings in Applied 
+> C % Mathematics and Mechanics, Munich, 2018.
+> C % 
+> C % 3) O. Martynenko, F. Kempter, C. Kleinbach, S. Schmitt and J. Fehr:
+> C % Integrated Physiologically Motivated Controller for the Open-Source 
+> C % Extended Hill-type Muscle Model in LS-DYNA. Proceedings of IRCOBI 
+> C % Conference, Athens, 2018.
+> C % 
+> C % Copyright (c) 2019 on modifications and LS-DYNA implementation belongs to
+> C % O. Martynenko, F. Kempter, C. Kleinbach, S. Schmitt and J. Fehr.
 > C % Copyright (c) 2017 on modifications and LS-DYNA implementation belongs to
 > C % C. Kleinbach, O. Martynenko, J. Promies, D.F.B. Haeufle, J. Fehr and
 > C % S. Schmitt. Original Copyright (c) 2014 belongs to D. Haeufle, M. Guenther,
@@ -42,14 +61,86 @@
 > C % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 > C % THE POSSIBILITY OF SUCH DAMAGE.
 > 
-2398c2437,2439
-<      1 temper,failel,crv,cma,qmat,elsiz,idele)
----
->      1 temper,failel,crv,cma,qmat,elsiz,idele,x,v,a,i,d1,d2,d3)
-> c
-> c   567 |    5    |    5    |    5    |    5    |    5    |    5    | 2  5    |
-2407c2448,2497
+>       subroutine umat41 (lft,cm,eps,sig,epsp,hsv,dt1,capa,etype,tt,
+>      1 temper,failel,crv,cma,qmat,elsiz,idele,x,v,a,i,d1,d2,d3,NHISVAR,
+>      2 no_hsvs)
+2424,2499c2478,2604
 < c     isotropic elastic material (sample user subroutine)
+< c
+< c     Variables
+< c
+< c     cm(1)=first material constant, here young's modulus
+< c     cm(2)=second material constant, here poisson's ratio
+< c        .
+< c        .
+< c        .
+< c     cm(n)=nth material constant
+< c
+< c     eps(1)=local x  strain increment
+< c     eps(2)=local y  strain increment
+< c     eps(3)=local z  strain increment
+< c     eps(4)=local xy strain increment
+< c     eps(5)=local yz strain increment
+< c     eps(6)=local zx strain increment
+< c
+< c     sig(1)=local x  stress
+< c     sig(2)=local y  stress
+< c     sig(3)=local z  stress
+< c     sig(4)=local xy stress
+< c     sig(5)=local yz stress
+< c     sig(6)=local zx stress
+< c
+< c     hsv(1)=1st history variable
+< c     hsv(2)=2nd history variable
+< c        .
+< c        .
+< c        .
+< c        .
+< c     hsv(n)=nth history variable
+< c
+< c     dt1=current time step size
+< c     capa=reduction factor for transverse shear
+< c     etype:
+< c        eq."solid" for solid elements
+< c        eq."sph" for smoothed particle hydrodynamics
+< c        eq."sld2d" for shell forms 13 (2D solids - plane strain)
+< c        eq."sldax" for shell forms 14, and 15 (2D solids - axisymmetric)
+< c        eq."shl_t" for shell forms 25, 26, and 27 (shells with thickness stretch)
+< c        eq."shell" for all other shell elements plus thick shell forms 1 and 2
+< c        eq."tshel" for thick shell forms 3 and 5
+< c        eq."hbeam" for beam element forms 1 and 11
+< c        eq."tbeam" for beam element form 3 (truss)
+< c        eq."dbeam" for beam element form 6 (discrete)
+< c        eq."beam " for all other beam elements
+< c
+< c     tt=current problem time.
+< c
+< c     temper=current temperature
+< c
+< c     failel=flag for failure, set to .true. to fail an integration point,
+< c            if .true. on input the integration point has failed earlier
+< c
+< c     crv=array representation of curves in keyword deck
+< c
+< c     cma=additional memory for material data defined by LMCA at 
+< c       6th field of 2nd crad of *DATA_USER_DEFINED
+< c
+< c     elsiz=characteristic element size
+< c
+< c     idele=element id
+< c
+< c     All transformations into the element local system are
+< c     performed prior to entering this subroutine.  Transformations
+< c     back to the global system are performed after exiting this
+< c     routine.
+< c
+< c     All history variables are initialized to zero in the input
+< c     phase. Initialization of history variables to nonzero values
+< c     may be done during the first call to this subroutine for each
+< c     element.
+< c
+< c     Energy calculations for the dyna3d energy balance are done
+< c     outside this subroutine.
 ---
 > c     Extended Hill-type muscle model with a contractile element
 > c     a parallel elastic element and serial elastic as well as a
@@ -64,7 +155,6 @@
 > c     Variables (activation dynamic)
 > c     cm(1)=Activation Option (EQ.0. Activation Values see STIM ID, EQ.1 Zajac, EQ.2 Hatze)
 > c     cm(2)=GT0: LE.0.0 constant values for STIM or Activation GT.0.0 curve id for STIM or Activation
-> c
 > c     cm(3)=q0 minimum value of q
 > c     cm(4)=tau_q time constant of rising activation LT0 curve id of tau_q over time
 > c     cm(4)=c
@@ -72,8 +162,7 @@
 > c     cm(5)=eta
 > c     cm(6)=k
 > c     cm(7)=m
-> c     cm(8)=additional constant muscle length
-> c
+> c     cm(8)=muscle length offset (not needed, use instead *Part_Averaged for routing)
 > c
 > c     Variables (isometric force)
 > c
@@ -101,99 +190,91 @@
 > c     cm(21)=F_PEE
 > c
 > c     Variables (Seriell elastic element)
-2409c2499,2502
-< c     Variables
----
+> c
 > c     cm(22)=l_SEE_0
 > c     cm(23)=dU_SEE_nllfindkParams
 > c     cm(24)=dU_SEE_l
 > c     cm(25)=dF_SEE_0
-2411,2416c2504,2530
-< c     cm(1)=first material constant, here young's modulus
-< c     cm(2)=second material constant, here poisson's ratio
-< c        .
-< c        .
-< c        .
-< c     cm(n)=nth material constant
----
+> c
 > c     Variables (Damping element)
 > c
-> c     cm(26)=damping methode
-> c     cm(27)=d_PE
-> c     cm(27)=d_SE
+> c     cm(26)= --- (former damping method)
 > c     cm(27)=D_SE
 > c     cm(28)=R_SE
 > c
-> c
-> c     Variable (Output definition; fort.(idele))
+> c     Variables (Output definition; musout.(partid))
 > c
 > c     cm(29)=output method (EQ.0.  no output 
-> c                           EQ.1.  basic output (idele, tt, ncycle, q) 
-> c                           EQ.2.  basic+Forces (i...q ,F_MTC, F_SEE, F_SDE, F_CE, F_PEE, F_isom)
-> c                           EQ.-1. basic+Lengths (i...q, elleng, l_CE, dot_l_MTC, dot_l_CE)
-> c                           EQ.-2. basic+Forces+Lengths (i...q, F..., elleng...)
+> c                           EQ.1.  basic output (idpart, tt, hsv(2:10)) 
+> c                           EQ.2.  advanced output (basic output plus dot_l_CE, dot_l_MTC, lCEdelay, dotlCEdelay))
 > c
-> c     cm(30)=timestep of outputfile 
+> c     cm(30)=timestep of outputfile
 > c
 > c     Variables for Controller
 > c
-> c     cm(33)=Activation Method
+> c     cm(33)=Activation Method (EQ.1. lambda_controller
+> c                               EQ.2. hybrid_controller
+> c                               EQ.3. reflexive controller)
+> c
 > c     cm(34)=target l_CE
 > c     cm(35)=kp
 > c     cm(36)=kd
-> c     cm(37)=delay
-> c     cm(38)=time till swap from alpha to lambda
-2419c2533
-< c     eps(2)=local y  strain increment
----
-> c     eps(2)=local y  strain incrementhsv(14)
-2422c2536
-< c     eps(5)=local yz strain increment
----
-> c     eps(5)=local yz strain incrementhsv(14)
-2432,2438c2546,2564
-< c     hsv(1)=1st history variable
-< c     hsv(2)=2nd history variable
-< c        .
-< c        .
-< c        .
-< c        .
-< c     hsv(n)=nth history variable
----
+> c     cm(37)=delay of lCEdelay / dotlCEdelay
+> c     cm(38)=time till swap from alpha to lambda / t_PreSim for reflexive controller
+> c     cm(39)=threshold for reflex controller (e.g. 0.10 for a 10% strain threshold)
+> c
+> [...]
+> c
 > c     d1  - strain rate/increment in x  direction, local x for shells
 > c     d2  - strain rate/increment in y  direction, local y for shells
 > c     d3  - strain rate/increment in z  direction, local z for shells
-> c
-> c         hsv(1)=sig(1)
-> c         hsv(2)=F_MTC
-> c         hsv(3)=F_SEE
-> c         hsv(4)=F_SDE
-> c         hsv(5)=F_CE
-> c         hsv(6)=F_PEE
-> c         hsv(7)=F_isom
-> c         hsv(8)=elleng
-> c         hsv(9)=l_CE
-> c         hsv(10)=dot_l_CE
-> c         hsv(11)=l_MTC_0
-> c         hsv(12)=q_old
-> c         hsv(13)=size required for ring buffer for lCE_delay
-> c	  hsv(14)=gam_rel
-> c         hsv(15)=counter_output
-2446c2572
-< c        eq."sldax" for shell forms 13 (2D solids - plane strain)
----
-> c        eq."sldax" for shell forms 13 (2D solids -hsv(14) plane strain)
-2464c2590
-< c     cma=additional memory for material data defined by LMCA at 
----
-> c     cma=additional memory for material data definhsv(14)ed by LMCA at 
-2487c2613,2630
+> c ------------------------------------------------------------
+> c ------ history variables - overview ------------------------
+> c ------------------------------------------------------------
+> c         hsv(1)    = sig(1)
+> c         hsv(2)    = STIM
+> c         hsv(3)    = q
+> c         hsv(4)    = F_MTC
+> c         hsv(5)    = F_CE
+> c         hsv(6)    = F_PEE
+> c         hsv(7)    = F_SEE
+> c         hsv(8)    = F_SDE
+> c         hsv(9)    = elleng (l_MTC)
+> c         hsv(10)   = l_CE
+> c         hsv(11)   = dot_l_MTC
+> c         hsv(12)   = dot_l_CE
+> c         hsv(13)   = counter_output
+> c         hsv(14)   = F_isom
+> c         hsv(15)   = gam_rel
+> c         hsv(16)   = l_MTC_0 (initial element length)
+> c ------------------------------------------------------------
+> c ------ only needed if controller are used ------------------
+> c ------------------------------------------------------------
+> c         hsv(20)   = lCEdelay
+> c         hsv(21)   = dotlCEdelay
+> c         hsv(22)   = l_CE_ref (for reflex controller)
+> c         hsv(23)   = strain (for reflex controller)
+> c         hsv(24)   = STIM_reflex_prev (STIM value of reflex controller in previous timestep)
+> c ------------------------------------------------------------
+> c ------ delay buffer-----------------------------------------
+> c ------------------------------------------------------------
+> c         hsv(30)   = buffersize
+> c         hsv(31)   = idx_begin_lCEbuffer (hsv(142:145) seems to be used internally by lsdyna, suggestion: use hsv(31)=150)
+> c         hsv(32)   = indexr1...index1 of lce-ringbuffer (not eq index of hsv)
+> c         hsv(33)   = indexr1...index2 of lce-ringbuffer (not eq index of hsv)
+> c         hsv(34)   = lasttime
+> c         hsv(36)   = begindotlCE
+> c         hsv(37)   = indexdotr1...index1 of dotlce-ringbuffer (not eq index of hsv)    
+> c         hsv(38)   = indexdotr2...index2 of dotlce-ringbuffer (not eq index of hsv)  
+> c         hsv(39)   = dotlasttime   
+> c         hsv(hsv(31):hsv(31)+hsv(30)-1) = ringbuffer_l_CE
+> c         hsv(hsv(36):hsv(36)+hsv(30)-1) = ringbuffer_dot_l_CE
+2500a2606
+> [...]
+2504c2610,2624
 <       dimension cm(*),eps(*),sig(*),hsv(*),crv(lq1,2,*),cma(*),qmat(3,3)
 ---
 > c
-> c   567 |    5    |    5    |    5    |    5    |    5    |    5    | 2  5    |
->       common/aux33loc/ix1(nlq),ix2(nlq),ix3(nlq),ix4(nlq),ix5(nlq),
->      1 ix6(nlq),ix7(nlq),ix8(nlq),mxt(nlq),ix9(nlq),ix10(nlq)
 >       common/prescloc/voltot(nlq)
 >       common/bk00/numnp,numpc,numlp,neq,ndof,nlcur,numcl,numvc,
 >      + ndtpts,nelmd,nmmat,numelh,numelb,numels,numelt,numdp,
@@ -202,84 +283,121 @@
 > c$omp threadprivate (/prescloc/)
 > c
 > c############################################
-> c#   Initialisierung der Vars               #
+> c#   initializing the variables             #
 > c############################################
 > c
 >       dimension cm(*),eps(*),sig(*),hsv(*),crv(lq1,2,*),cma(*)
 >       dimension x(3,*),v(3,*),a(3,*),qmat(3,3)
 >       dimension d1(*),d2(*),d3(*)
-2489a2633,2825
->       real*8 A1,B1,dot_h,dot_h_0,ent_rate,mech_eff
+2507,2513c2627,2856
+<       integer idele
+< c
+<       if (ncycle.eq.1) then
+<         if (cm(16).ne.1234567) then
+<           call usermsg('mat41')
+<         endif
+<       endif
+---
 >       real*8 l_PEE0, K_PEE, d_SE_max, l_SEE_nll, v_SEE, K_SEE_nl
 >       real*8 F_isom, F_PEE, F_SEE, l_SEE, L_A_rel, A_rel, q,dq
 >       real*8 B_rel, L_B_rel, Q_Brel, D0, C2, C1, C0, dot_l_CE
->       real*8 v_max, P, O1, O2, O3, F_CE, F_CE_init, F_SDE, F_MTC
+>       real*8 O1, O2, O3, F_CE, F_CE_init, F_SDE, F_MTC
 >       real*8 dot_l_MTC,Q_Arel, K_SEE_l, F_SUM, AREA,l_CE,q_old
->       real*8 n1,n2,n3,v1,v2,dv1,dv2,tol,l_MTC_0,l_CE_temp,STIM,dSTIM
->       real*8 tau,dtau,epsilon, wirk,E_PEE,E_SEE,E_CE,E_MTC,E_SDE,E_ges
+>       real*8 tol,l_MTC_0,STIM,dSTIM,tau,dtau,epsilon
 >       real*8 delay, gam_rel, rho_act, lCEdelay, dotlCEdelay
 >       real*8 lambda,dlambda
->       real*8 :: ZEROIN
->       real*8 :: calc_F_SUM
->       integer curve_id, var,k,j
+>       integer curve_id, var,k,j,idpart
 >       common /coeff/ l_PEE0,K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl
 >      1 ,K_SEE_l,epsilon
+>       common/soundloc/sndspd(nlq),sndsp(nlq),diagm(nlq),sarea(nlq)
+>       common/aux33loc/
+>      1 ix1(nlq),ix2(nlq),ix3(nlq),ix4(nlq),ix5(nlq),mxt(nlq)
+>       common/aux14loc/
+>      1 sig1(nlq),sig2(nlq),sig3(nlq),sig4(nlq),
+>      2 sig5(nlq),sig6(nlq),epx1(nlq),epx2(nlq),aux(nlq,14),dig1(nlq),
+>      3 sig_pass(nlq),sig_actv(nlq),act_levl(nlq),out_leng(nlq),
+>      4 eps_rate(nlq),sig_svs(nlq),sig_sde(nlq)
 > c############################################
-> c#   Calc Muscle Parameters                 #
+> c#   calc muscle parameters                 #
 > c############################################
->          l_PEE0=cm(19)*cm(10)
->          if (cm(26).EQ.3.0) then
->          d_SE_max=cm(27)*(cm(9)*cm(15))/(cm(10)*cm(16))
->          else
->          d_SE_max=0.0
->          end if
->          l_SEE_nll=(1.0+cm(23))*cm(22)
->          v_SEE=cm(23)/cm(24)
->          K_SEE_nl=cm(25)/(cm(23)*cm(22))**v_SEE
->          K_SEE_l=cm(25)/(cm(24)*cm(22))
->          K_PEE=cm(21)*(cm(9)/(cm(10)*(cm(11)+1.0-cm(19)))**cm(20))
+>        l_PEE0=cm(19)*cm(10)
+>        d_SE_max=cm(27)*(cm(9)*cm(15))/(cm(10)*cm(16))
+>        l_SEE_nll=(1.0+cm(23))*cm(22)
+>        v_SEE=cm(23)/cm(24)
+>        K_SEE_nl=cm(25)/(cm(23)*cm(22))**v_SEE
+>        K_SEE_l=cm(25)/(cm(24)*cm(22))
+>        K_PEE=cm(21)*(cm(9)/(cm(10)*(cm(11)+1.0-cm(19)))**cm(20))
 > c############################################
-> c#      calc Length of Truss Element        #
+> c#   calc length of muscle element          #
 > c############################################ 
->         elleng=sqrt((x(1,ix1(i))-x(1,ix2(i)))**2
->      1  +(x(2,ix1(i))-x(2,ix2(i)))**2
->      2  +(x(3,ix1(i))-x(3,ix2(i)))**2)+cm(8)
-> c muscle length is element length plus offset
+>        idpart=lqfmiv(mxt(lft))
+> c muscle length is part length plus offset
+>        elleng=sqrt(sarea(i))+cm(8)
+>        if (ncycle.LT.1) then 
+>         hsv(16)=elleng
+>         return
+>        endif       
 > c     
->        if (ncycle.LT.1) then
+>        if (ncycle.LT.2) then
 > c       
 >          epsilon = 1.0
 >    99    epsilon = 0.5*epsilon
 >          if ( 1.0 + 0.5*epsilon .GT. 1.0 ) GOTO 99
 > c
->        hsv(11)=elleng
+>          hsv(3)=cm(3)
+>          hsv(13)=0.0
+>          hsv(15)=0.0
+>          hsv(16)=elleng
 > c     
->        hsv(12)=cm(3)
->        hsv(14)=0.0
->        hsv(15)=0
-> c
 >        end if
+> c     
 > c############################################
-> c#   Calc delayed lCE/dotlCE                #
+> c#   calc delayed lCE/dotlCE                #
 > c############################################       
+> c ncycle.EQ.3, because for ncycle<=2: dt1==0 in case of part_averaged
+>        if (ncycle.LT.3.and.cm(33).ge.1.0.and.cm(37).GT.0.0) then
+> c             delay = cm(37)
+> c beginlCE (150 because of lsdyna messing with our data at lower index)
+>               hsv(31) = 150
+> c total buffersize based on NHISVAR  (CEILING = "abrunden")         
+>               hsv(30) = ceiling((no_hsvs-hsv(31)-4)/2);
+> c NHISVAR is the amount of maximum hsv (defined in compile process)
+> c no_hsvs is the user defined amount of hsvs (!<=NHISVAR)
 > c
-> c       if (ncycle.EQ.1.and.cm(33).ge.1.0.and.cm(37).GT.0.0) then
-> c              hsv(13)=anint(cm(37)/dt1)
-> c       end if
-> cc
-> c       if (ncycle.GE.1.and.cm(33).ge.1.0.and.cm(37).GT.0.0) then
-> c       call delaylCE(i,ncycle,hsv(9),numelb,
-> c     1 int(hsv(13)),cm(37),lCEdelay,tt)
-> c       call delaydotlCE(i,ncycle,hsv(10),numelb,
-> c     1 int(hsv(13)),cm(37),dotlCEdelay,tt)
-> c       else if (ncycle.GE.1.and.cm(33).ge.1.0.and.cm(37).EQ.0.0) then
-> c       dotlCEdelay=hsv(10)
-> c       lCEdelay=hsv(9)
-> c       end if
+> c indexr1  
+>               hsv(32) = 0
+> c indexr2
+>               hsv(33) = 1
+> c lasttime
+>               hsv(34) = 0
+> c begindotlCE
+>               hsv(36) = hsv(31)+hsv(30)+2
+> c indexdotr1              
+>               hsv(37) = 0
+> c indexdotr1
+>               hsv(38) = 1
+> c dotlasttime
+>               hsv(39) = 0
+>        end if
+> c
+>        if (ncycle.GE.3.and.cm(33).ge.1.0.and.cm(37).GT.0.0) then
+> c all controllers with delay.gt.0
+>             lCEdelay = delaylCE(ncycle,hsv,cm,idpart,tt)
+>             dotlCEdelay=hsv(12)
+>             if (cm(33).le.2.0) then
+> c lambda/hybrid controller require delaydotlCE
+>                 dotlCEdelay = delaydotlCE(ncycle,hsv,cm,idpart,tt)    
+>             endif
+>        else if (ncycle.GE.3.and.cm(33).ge.1.0.and.cm(37).EQ.0.0) then
+> c all controllers without delay
+>             dotlCEdelay=hsv(12)
+>             lCEdelay=hsv(10)
+>        end if
+>        hsv(20) = lCEdelay
+>        hsv(21) = dotlCEdelay
 > c       
-> c
 > c############################################
-> c#   Calc Activation                        #
+> c#   calc activation                        #
 > c############################################
 > c
 >        if (cm(1).EQ.0) then
@@ -291,7 +409,7 @@
 >              call crvval(crv,abs(cm(2)),tt,q,dq)
 > c      activation level from curve
 >           end if
->           hsv(12)=q
+>           hsv(3)=q
 >        else if (cm(1).EQ.1.0) then
 > c      Calc Activation with Zajac
 > c      1. get STIM
@@ -305,13 +423,12 @@
 > c      2. get tau
 >           if (cm(4).LT.0.0) then
 >              call crvval(crv,abs(cm(4)),tt,tau,dtau)
-> c      variable tau? not documented!
 >           else
 >              tau=cm(4)
 >           end if
 > c      3. calc new q
->           q=hsv(12)+calc_dq(hsv(12),cm,STIM,tau)*dt1
->           hsv(12)=q
+>           q=hsv(3)+calc_dq(hsv(3),cm,STIM,tau)*dt1
+>           hsv(3)=q
 >        else if (cm(1).EQ.2.0) then
 > c      Calc Activation with Hatze
 > c      1. get STIM
@@ -321,104 +438,108 @@
 >           else if (cm(2).GT.0.0.and.cm(33).EQ.0.0) then
 > c      STIM level from curve
 >              call crvval(crv,cm(2),tt,STIM,dSTIM)
-> c          else if (cm(33).EQ.1.0) then
-> cc      HERE COMES THE LAMBDA CONTROLLER PART
-> c          if (cm(34).LE.0.0) then
-> c            lambda=-cm(34)
-> c          else
-> c            call crvval(crv,cm(34),tt,lambda,dlambda)
-> c          end if
-> c             if (tt.LT.cm(38)) then
-> c             call crvval(crv,cm(2),tt,STIM,dSTIM)
-> c             else
-> c             STIM=STIM_lambda(cm,hsv,lCEdelay,dotlCEdelay,tt,lambda)
-> c             end if
-> cc      HERE COMES THE HYBRID CONTROLLER PART
-> c          else if (cm(2).LE.0.0.and.cm(33).EQ.2.0) then
-> c             STIM=abs(cm(2))
-> c             if (cm(34).LE.0.0) then
-> c                lambda=-cm(34)
-> c             else
-> c                call crvval(crv,cm(34),tt,lambda,dlambda)
-> c             end if
-> c             STIM=STIM_hybrid(cm,hsv,STIM,lambda,dlambda,
-> c     1 lCEdelay, dotlCEdelay,tt)
-> c          else if (cm(2).GT.0.0.and.cm(33).EQ.2.0) then
-> c             call crvval(crv,cm(2),tt,STIM,dSTIM)
-> c             if (cm(34).LE.0.0) then
-> c                lambda=-cm(34)
-> c             else
-> c                 call crvval(crv,cm(34),tt,lambda,dlambda)
-> c             end if
-> c             STIM=STIM_hybrid(cm,hsv,STIM,lambda,dlambda,
-> c     1 lCEdelay, dotlCEdelay,tt)
+>           else if (cm(33).EQ.1.0) then
+> c------HERE COMES THE LAMBDA CONTROLLER PART
+>           if (cm(34).LE.0.0) then
+>             lambda=-cm(34)
+>           else
+>             call crvval(crv,cm(34),tt,lambda,dlambda)
 >           end if
+>              if (tt.LT.cm(38)) then
+>              call crvval(crv,cm(2),tt,STIM,dSTIM)
+>              else
+>              STIM=STIM_lambda(cm,hsv,lCEdelay,dotlCEdelay,tt,lambda)
+>              end if
+> c------HERE COMES THE HYBRID CONTROLLER PART
+>           else if (cm(2).LE.0.0.and.cm(33).EQ.2.0) then
+>              STIM=abs(cm(2))
+>              if (cm(34).LE.0.0) then
+>                 lambda=-cm(34)
+>              else
+>                 call crvval(crv,cm(34),tt,lambda,dlambda)
+>              end if
+>              STIM=STIM_hybrid(cm,hsv,STIM,lambda,dlambda,
+>      1 lCEdelay, dotlCEdelay,tt)
+>           else if (cm(2).GT.0.0.and.cm(33).EQ.2.0) then
+>              call crvval(crv,cm(2),tt,STIM,dSTIM)
+>              if (cm(34).LE.0.0) then
+>                 lambda=-cm(34)
+>              else
+>                  call crvval(crv,cm(34),tt,lambda,dlambda)
+>              end if
+>              STIM=STIM_hybrid(cm,hsv,STIM,lambda,dlambda,
+>      1 lCEdelay, dotlCEdelay,tt)
+> c------HERE COMES THE REFLEXIVE CONTROLLER PART     
+>           else if (cm(33).EQ.3.0.and.ncycle.GE.3) then
+>              STIM=STIM_reflex(ncycle,cm,hsv,tt)
+>           end if
+>           hsv(2)=STIM
 > c         calc new gamma
->           gam_rel=hsv(14)+calc_dgam(cm(7),STIM,hsv(14))*dt1
->           hsv(14)=gam_rel
+>           gam_rel=hsv(15)+calc_dgam(cm(7),STIM,hsv(15))*dt1
+>           hsv(15)=gam_rel
 > c         calc new rho
->           rho_act=cm(4)*cm(5)*(cm(6)-1.0)/(cm(6)-(hsv(9)/cm(10)))
->      1    *(hsv(9)/cm(10))
+>           rho_act=cm(4)*cm(5)*(cm(6)-1.0)/(cm(6)-(hsv(10)/cm(10)))
+>      1    *(hsv(10)/cm(10))
 > c         calc new q
 >           q=(cm(3)+(rho_act*gam_rel)**3)/(1.0+(rho_act*gam_rel)**3)
->           hsv(12)=q
+>           hsv(3)=q
 >        end if
 > c
-> c      
-> c
 > c############################################
-> c#   Calc Initial Muscle Force Equilibrium  #
+> c#   calc initial muscle force equilibrium  #
 > c############################################
->        if (ncycle.LT.1) then
+>        if (ncycle.LT.2) then
 >          dot_l_MTC=0.0
-> c         
+> c        q=q0 for initialization of l_CE
+>          q=cm(3)
 > c        Force resulting from the force equilibrium between PEE or CE and SEE or
 > c        SDE at starting point (dot_l_CE = 0 ~> F_SDE = 0):
+>        if (ncycle.GE.1) then
 >          l_CE=ZEROIN(elleng,q,cm)
 >          call hill_model(l_CE,elleng,dot_l_MTC,q,cm,
 >      1   F_MTC,F_SEE,F_SDE,F_CE,F_PEE,F_isom,dt1,hsv,dot_l_CE,tt,i)
 >        end if
+>        end if
 > c
->        if (etype.eq.'tbeam'.or.'hbeam') then
+>        if (etype.eq.'tbeam') then
 > c
->        if (ncycle.GE.1) then
+>        if (ncycle.GE.2) then
 > c
-> c  INITIALIZATION
-> c
->         l_CE=hsv(9)
+> c------INITIALIZATION
+>         l_CE=hsv(10)
 > c
 > c  calc dot_l_MTC
 > c
->         n1=x(1,ix1(i))-x(1,ix2(i))
->         n2=x(2,ix1(i))-x(2,ix2(i))
->         n3=x(3,ix1(i))-x(3,ix2(i))
->         v1=v(1,ix1(i))*n1+v(2,ix1(i))*n2+v(3,ix1(i))*n3
->         v2=v(1,ix2(i))*n1+v(2,ix2(i))*n2+v(3,ix2(i))*n3
-> c		scaling with element(truss) length
->         dv1=v1/(elleng-cm(8))
->         dv2=v2/(elleng-cm(8))
->         dot_l_MTC=dv1-dv2
+> c calculating from strain,timestep and part length
+>         dot_l_MTC=eps(i)/dt1*sqrt(sarea(i))
+>         hsv(11) = dot_l_MTC
 > c
 > c############################################
-> c#   Update Force/Length/Velo               #
+> c#   update force/length/velocity           #
 > c############################################
-2491,2495c2827,2828
-<       if (ncycle.eq.1) then
-<         if (cm(16).ne.1234567) then
-<           call usermsg('mat41')
-<         endif
-<       endif
----
+> c
 >         call hill_model(l_CE,elleng,dot_l_MTC,q,cm,
 >      1  F_MTC,F_SEE,F_SDE,F_CE,F_PEE,F_isom,dt1,hsv,dot_l_CE,tt,i)
-2497c2830
+> c
+>        end if
+> c
+> c  calc stresses from force
+> c
+>        if (etype.eq.'tbeam') then        
+>         sig(1)=F_MTC/(voltot(i)/sqrt(sarea(i)))
+> c  crosssection area is volume divided by part length
+2515c2858,2860
 < c     compute shear modulus, g
 ---
->         end if
-2499,2500d2831
+>         sig(2)=0.0
+>         sig(3)=0.0
+>        end if
+2517,2518c2862
 <       g2 =abs(cm(1))/(1.+cm(2))
 <       g  =.5*g2
-2502,2521d2832
+---
+> c  write history variables
+2520,2538c2864,2881
 <       if (etype.eq.'solid'.or.etype.eq.'shl_t'.or.
 <      1     etype.eq.'sld2d'.or.etype.eq.'tshel'.or.
 <      2     etype.eq.'sph  '.or.etype.eq.'sldax') then
@@ -438,8 +559,26 @@
 <             if (sig(1).gt.cm(5)) failel=.true.
 <           endif
 <           endif
-<         end if
-2523,2575c2834,2838
+---
+>        hsv(1) = sig(1)
+>        hsv(4) = F_MTC
+>        hsv(5) = F_CE
+>        hsv(6) = F_PEE
+>        hsv(7) = F_SEE
+>        hsv(8) = F_SDE
+>        hsv(9) = elleng
+>        hsv(10)= l_CE
+>        hsv(12)= dot_l_CE
+>        hsv(14)= F_isom
+> c  output is written only if output mode is set to 1...normal or 2...expert   
+>         if((cm(29).eq.1).or.(cm(29).eq.2)) then   
+> c  output is written only if time is GE than dt_out*counter_output    
+>          if (tt.GE.(hsv(13)*cm(30))) then
+>              call output(cm,idpart,hsv,tt)
+> c  counter_output is adjusted
+>              hsv(13)=hsv(13)+1
+>          end if
+2541,2596d2883
 <       else if (etype.eq.'shell') then
 <         if (cm(16).eq.1234567) then
 <           call mitfailure(cm,eps,sig,epsp,hsv,dt1,capa,failel,tt,crv)
@@ -493,69 +632,42 @@
 <         davg  =(-eps(1)-eps(2)-eps(3))/3.
 <         p     =-davg*cm(1)/(1.-2.*cm(2))
 <         sig(1)=sig(1)+p+g2*(eps(1)+davg)
----
-> c  Calc Stresses from Force
+<         sig(2)=0.0
+<         sig(3)=0.0
+< c
+2610a2898,3412
+> c END OF SUBROUTINE UMAT41
 > c
->         if (etype.eq.'tbeam') then        
->         sig(1)=F_MTC/(voltot(i)/(elleng-cm(8)))
-> c		crosssection area is volume divided by element(truss) length
-2577a2841,2861
->         end if
+> c############################################
+> c#   hill-model subroutine                  #
+> c############################################
 > c
-> c  Write History Variables
-> c
->          hsv(1)=sig(1)
->          hsv(2)=F_MTC
->          hsv(3)=F_SEE
->          hsv(4)=F_SDE
->          hsv(5)=F_CE
->          hsv(6)=F_PEE
->          hsv(7)=F_isom
->          hsv(8)=elleng
->          hsv(9)=l_CE
->          hsv(10)=dot_l_CE
->          if (tt.GE.(hsv(15)*cm(30))) then
-> c  output is written only if time is GE than dt_out*counter_output
->          call output(cm,idele,F_MTC,F_SEE,F_SDE,F_CE,F_PEE,F_isom,
->      1 elleng,l_CE,dot_l_MTC,dot_l_CE,ncycle,tt,dt1,q)
-> c  counter_output is adjusted
->          hsv(15)=hsv(15)+1
->          end if
-2592a2877,3336
-> c   567 |    5    |    5    |    5    |    5    |    5    |    5    | 2  5    |
 >       subroutine hill_model(l_CE,elleng,dot_l_MTC,q,cm,
 >      1 F_MTC,F_SEE,F_SDE,F_CE,F_PEE,F_isom,dt1,hsv,dot_l_CE,tt,i)
 > c
 >       dimension cm(*),hsv(*)
->       dimension qmat(3,3)
->       integer i
->       real*8 A1,B1,dot_h,dot_h_0,ent_rate,mech_eff
 >       real*8 l_PEE0, K_PEE, d_SE_max, l_SEE_nll, v_SEE, K_SEE_nl
 >       real*8 l_CE, F_isom, F_PEE, F_SEE, l_SEE, L_A_rel, A_rel, q
->       real*8 B_rel,Q_Brel,D0,C2,C1,C0,dot_l_CE
->       real*8 v_max, P, O1, O2, O3, F_CE, F_CE_init, F_SDE, F_MTC
->       real*8 dot_l_MTC, elleng, K_SEE_l, Q_Arel, F_SUM, AREA
->       real*8 l_MTC_0,dt1,tt,epsilon, Power, dot_l_SDE
+>       real*8 B_rel, Q_Brel, D0, C2, C1, C0, dot_l_CE
+>       real*8 O1, O2, O3, F_CE, F_CE_init, F_SDE, F_MTC
+>       real*8 dot_l_MTC, elleng, K_SEE_l, Q_Arel, F_SUM 
+>       real*8 l_MTC_0, dt1, tt, epsilon, dot_l_SDE
 >       common /coeff/ l_PEE0,K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl
 >      1 ,K_SEE_l,epsilon
 > c
-> c
->       include 'iounits.inc'
-> c
-> c  Isometric Force
-> c
+> c  isometric force
 > c
 >          F_isom=calc_F_isom(l_CE,cm)
 > c
-> c  Force of the parallel elastic element PEE
+> c  force of the parallel elastic element PEE
 > c
 >          F_PEE=calc_F_PEE(l_CE,cm)
 > c
-> c  Force of the serial elastic element SEE
+> c  force of the serial elastic element SEE
 > c
 >          F_SEE=calc_F_SEE(l_CE,cm,elleng)
 > c
-> c  Hill Parameters concentric contraction
+> c  Hill parameters concentric contraction
 > c
 >          if (l_CE.LT.cm(10)) then
 >            L_A_rel=1.0
@@ -569,35 +681,17 @@
 > c
 > c  calculate CE contraction velocity
 > c
-> c   567 |    5    |    5    |    5    |    5    |    5    |    5    | 2  5    |
 >          call calc_damping(q,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,
 >      1 dot_l_MTC,D0,C2,C1,C0)
 > c         
 >          if ((C1**2.0-4.0*C2*C0).LT.0.0) then
 >            dot_l_CE=0.0
 >          else if ((D0.EQ.0.0).and.(C2.EQ.0.0)) then
+> c        no damping
 >            dot_l_CE=C0/C1
 >          else
 >            dot_l_CE=(-C1-sqrt(C1**2.0-4.0*C2*C0))/(2.0*C2)
 >          end if
-> c
-> c  in case of a negative CE-force (numerical restriction)
-> c
->          v_max=B_rel/A_rel*cm(10)*q*F_isom
-> c
-> c   Future Task: analyse why dot_l_MTC is LT -vmax in quick_release applications
-> c
-> c         if (dot_l_MTC.LT.(-v_max)) then
-> c           P=1e3*cm(9)*cm(10)*cm(16)/cm(15)
-> c           O1=-1.0/(P*cm(9)*B_rel*cm(10))
-> c           O2=1.0/(P*cm(9))-A_rel/(B_rel*cm(10))
-> c           O3=-q*F_isom
-> c           if ((O2**2.0-4.0*O1*O3).LT.0.0) then
-> c              dot_l_CE=0.0
-> c           else
-> c              dot_l_CE=(-O2-sqrt(O2**2.0-4.0*O1*O3))/(2.0*O1)E
-> c           end if
-> c         end if
 > c
 > c  in case of an eccentric contraction
 > c
@@ -608,13 +702,13 @@
 > c
 > c  calculate CE eccentric velocity
 > c
-> c   567 |    5    |    5    |    5    |    5    |    5    |    5    | 2  5    |
 >             call calc_damping(q,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,
 >      1 dot_l_MTC,D0,C2,C1,C0)
 > c            
 >             if ((C1**2.0-4.0*C2*C0).LT.0.0) then
 >               dot_l_CE=0.0
 >             else if ((D0.EQ.0.0).and.(C2.EQ.0.0)) then
+> c           no damping
 >               dot_l_CE=-C0/C1
 >             else
 >               dot_l_CE=(-C1+sqrt(C1**2.0-4.0*C2*C0))/(2.0*C2)
@@ -626,12 +720,11 @@
 > c
 > c  numerical restriction
 > c
-> c   567 |    5    |    5    |    5    |    5    |    5    |    5    | 2  5    |
 >          if (l_CE.LT.(0.01*cm(10))) then
 >             dot_l_CE=0.0
 >          end if
 >          if (l_CE.GT.(1.99*cm(10))) then
->            l_SEE=abs(elleng-l_CE)
+>            l_SEE=elleng-l_CE
 >            dot_l_CE=dot_l_MTC/(1.0+(K_PEE*cm(20)*(l_CE-l_PEE0)**
 >      1     (cm(20)-1.0))/(K_SEE_nl*v_SEE*(l_SEE-cm(22))**(v_SEE-1.0)))
 >          end if
@@ -641,24 +734,25 @@
 >          F_CE=cm(9)*(((q*F_isom+A_rel)/(1.0-dot_l_CE/(cm(10)*B_rel)))
 >      1   -A_rel)
 > c
-> c  Force of the serial damping element
+> c  force of the serial damping element
 > c
 >          F_SDE=d_SE_max*((1.0-cm(28))*((F_CE+F_PEE)/cm(9))+cm(28))
 >      1   *(dot_l_MTC-dot_l_CE)
 >          F_MTC=F_SEE+F_SDE
 > c
-> c  Calc l_CE (integrate dot_l_CE with finite difference methode)
+> c  calc l_CE (integrate dot_l_CE with finite difference methode)
 > c
 >          l_CE=l_CE+dot_l_CE*dt1
->          hsv(9)=l_CE
->          hsv(10)=dot_l_CE
-> c
+>          hsv(10)=l_CE
+>          hsv(12)=dot_l_CE
 > c
 >          return
 >          end
+> c END OF SUBROUTINE HILL_MODEL
+> c      
 > c
 > c############################################
-> c#   ZEROIN subroutine                      #
+> c#   ZEROIN function                        #
 > c############################################
 > c
 >       real*8 function ZEROIN(elleng,act,cm)
@@ -672,19 +766,19 @@
 > c
 > c     as interval we used [0,elleng], the function to evaluate F(X)
 > c     is calc_F_sum(X,elleng,act,cm).
+> 
 > c
 > [...]
-> c END OF SUBROUTINE ZEROIN
+> c END OF FUNCTION ZEROIN
 > c
+> c############################################
+> c#   calc_F_SUM function                    #
+> c############################################
 > c
 >       real*8 function calc_F_SUM(l_CE,elleng,q,cm)
->       dimension cm(*)
-> c   567 |    5    |    5    |    5    |    5    |    5    |    5    | 2  5    |
->          real*8 l_PEE0, K_PEE, v_SEE, K_SEE_nl, K_SEE_l,l_SEE_nll,l_CE
->          real*8 F_isom, F_PEE, F_SEE, F_CE_init, elleng, q,l_SEE_nl
->          real*8 d_SE_max,l_MTC_0,epsilon
->       common /coeff/ l_PEE0,K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl
->      1 ,K_SEE_l,epsilon
+>          dimension cm(*)
+>          real*8 F_isom, F_PEE, F_SEE, F_CE_init 
+>          real*8 l_CE, elleng, q
 > c
 > c  calc coefficients
 > c
@@ -696,9 +790,14 @@
 >       return
 >       end
 > c
+> c END OF FUNCTION CALC_F_SUM
+> c
+> c############################################
+> c#   calc_F_isom function                   #
+> c############################################
+> c
 > c
 >       real*8 function calc_F_isom(l_CE,cm)
-> c   567 |    5    |    5    |    5    |    5    |    5    |    5    |    5    |
 > c  Isometric Force
 > c
 >          real*8 l_CE
@@ -711,9 +810,13 @@
 >       return
 >       end
 > c
+> c END OF FUNCTION CALC_F_ISOM
+> c
+> c############################################
+> c#   calc_F_PEE function                    #
+> c############################################
 > c
 >       real*8 function calc_F_PEE(l_CE,cm)
-> c   5    |    5    |    5    |    5    |    5    |    5    |    5    |    5    |
 > c  Force of the parallel elastic element PEE
 > c
 >          dimension cm(*)
@@ -730,6 +833,12 @@
 >       return
 >       end
 > c
+> c END OF FUNCTION CALC_F_PEE
+> c
+> c############################################
+> c#   calc_F_SEE function                    #
+> c############################################
+> c
 > c
 >       real*8 function calc_F_SEE(l_CE,cm,elleng)
 > c   5    |    5    |    5    |    5    |    5    |    5    |    5    |    5    |
@@ -738,10 +847,10 @@
 >          dimension cm(*)
 >          real*8 l_CE,K_SEE_nl,K_SEE_l,l_SEE,l_SEE_nll
 >          real*8 v_SEE,elleng,d_SE_max,l_PEE0,K_PEE,epsilon
->       common /coeff/ l_PEE0,K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl
+>          common /coeff/ l_PEE0,K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl
 >      1 ,K_SEE_l,epsilon
 > c
->          l_SEE=abs(elleng-l_CE)
+>          l_SEE=elleng-l_CE
 >          if ((l_SEE.LT.l_SEE_nll).and.(l_SEE.GT.cm(22))) then
 >            calc_F_SEE=K_SEE_nl*((l_SEE-cm(22))**v_SEE)
 >          else if (l_SEE.GE.l_SEE_nll) then
@@ -753,15 +862,26 @@
 >       return
 >       end
 > c
+> c END OF FUNCTION CALC_F_SEE
+> c
+> c############################################
+> c#   calc_dgam function                     #
+> c############################################
+> c
 >       real*8 function calc_dgam(m,STIM,gam_rel)
 >          real*8 m,STIM,gam_rel
 >          calc_dgam=m*(STIM-gam_rel)
 >       return
 >       end
 > c
+> c END OF FUNCTION CALC_DGAM
+> c
+> c############################################
+> c#   calc_dq function                       #
+> c############################################
+> c
 >       real*8 function calc_dq(q,cm,STIM,tau_q)
-> c   5    |    5    |    5    |    5    |    5    |    5    |    5    |    5    |
-> c  Calculates activation with the Differentialequation
+> c  calculates activation with the differential equation
 > c
 >          dimension cm(*)
 >          real*8 q,STIM,tau_q
@@ -771,33 +891,19 @@
 >       return
 >       end
 > c
+> c END OF FUNCTION CALC_DQ
+> c
+> c############################################
+> c#   calc_damping subroutine                #
+> c############################################
+> c
 >       subroutine calc_damping(q,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,
 >      1 dot_l_MTC,D0,C2,C1,C0)
->       dimension cm(*)
->       real*8 q,A_rel,B_rel,F_SEE,F_PEE,F_isom,
->      1 dot_l_MTC,d_SE_max,D0,C2,C1,C0,epsilon
->       common /coeff/ l_PEE0,K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl
->      1 ,K_SEE_l,epsilon
->       if (cm(26).EQ.1.0) then
-> c      
-> c    constant parallel (PE)-Damping
-> c
->          D0=0.0
->          C2=cm(27)
->          C1=-(cm(27)*cm(10)*B_rel+F_SEE-F_PEE+cm(9)*A_rel)
->          C0=cm(10)*B_rel*(F_SEE-F_PEE-cm(9)*q*F_isom)
-> c
->       else if (cm(26).EQ.2.0) then
-> c      
-> c    constant serial (SE)-Damping
-> c
->          D0=0.0
->          C2=cm(27)
->          C1=-(cm(27)*(dot_l_MTC+cm(10)*B_rel)+F_SEE-F_PEE+cm(9)*A_rel)
->          C0=cm(10)*B_rel*(cm(27)*dot_l_MTC+F_SEE-F_PEE-cm(9)*q*F_isom)
-> c
->       else if (cm(26).EQ.3.0) then
-> c      
+>         dimension cm(*)
+>         real*8 q,A_rel,B_rel,F_SEE,F_PEE,F_isom,
+>      1   dot_l_MTC,d_SE_max,D0,C2,C1,C0,epsilon
+>         common /coeff/ l_PEE0,K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl
+>      1   ,K_SEE_l,epsilon
 > c    Force-dependent serial (SE)-Damping
 > c
 >          D0=cm(10)*B_rel*d_SE_max*(cm(28)+(1.0-cm(28))
@@ -806,179 +912,242 @@
 >          C1=-C2*dot_l_MTC-D0-F_SEE+F_PEE-cm(9)*A_rel
 >          C0=D0*dot_l_MTC+cm(10)*B_rel*(F_SEE-F_PEE-cm(9)*q*F_isom)
 > c
->       else
-> c      
-> c    no Damping
-> c      
->          D0=0.0
->          C2=0.0
->          C1=-(F_SEE-F_PEE+cm(9)*A_rel)
->          C0=cm(10)*B_rel*(F_PEE-F_SEE+cm(9)*q*F_isom)
->       end if
 >       return
 >       end
 > c
-> c      real*8 function STIM_lambda(cm,hsv,lCEdelay,dotlCEdelay,tt,lambda)
-> cc############################################
-> cc#            Lambda Controller             #
-> cc############################################
-> c         dimension cm(*),hsv(*)
-> c         real*8 lCEdelay,dotlCEdelay,lambda
-> c          STIM_lambda=(cm(35)*(lambda-
-> c     1 lCEdelay)+cm(36)*(-dotlCEdelay))/cm(10)
-> c          if (STIM_lambda.GT.1.0) then
-> c          STIM_lambda=1.0
-> c          else if (STIM_lambda.LT.0.0) then
-> c          STIM_lambda=0.0
-> c          else
-> c          continue
-> c          end if
-> c      return
-> c      end
+> c END OF SUBROUTINE CALC_DAMPING
 > c
-> c      real*8 function STIM_hybrid(cm,hsv,STIM_open,lambda,dlambda,
-> c     1 lCEdelay,dotlCEdelay,tt)
-> cc############################################
-> cc#            Hybrid Controller             #
-> cc############################################
-> c         dimension cm(*),hsv(*)
-> c         real*8 STIM_open, lambda,dlambda
-> c         real*8 lCEdelay, dotlCEdelay
-> c          STIM_hybrid=(STIM_open+(cm(35)*(lambda-lCEdelay)
-> c     1 +cm(36)*(dlambda-dotlCEdelay))/cm(10))
-> c          if (STIM_hybrid.GT.1.0) then
-> c          STIM_hybrid=1.0
-> c          else if (STIM_hybrid.LT.0.0) then
-> c          STIM_hybrid=0.0
-> c          else
-> cc          write(115,*)STIM_hybrid
-> c          end if
-> c      return
-> c      end
-> c
->       subroutine output(cm,idele,F_MTC,F_SEE,F_SDE,F_CE,F_PEE,F_isom
->      1 ,elleng,l_CE,dot_l_MTC,dot_l_CE,nintcy,tt,dt1,q)
->       integer idele,nintcy
->       real*8 F_MTC,F_SDE,F_CE,F_PEE,elleng,l_CE,tt
->      1 ,dot_l_MTC,dot_l_CE,q
->       dimension cm(*) 
->       if (abs(cm(29)).GT.0) then
->        write(idele,*)idele
->        write(idele,*)tt
->        write(idele,*)nintcy
->        write(idele,*)q
->       if (abs(cm(29)).GE.2) then
->        write(idele,*)F_MTC
->        write(idele,*)F_SEE
->        write(idele,*)F_SDE
->        write(idele,*)F_CE
->        write(idele,*)F_PEE
->        write(idele,*)F_isom
->       end if
->       if (cm(29).LT.0) then
->        write(idele,*)elleng
->        write(idele,*)l_CE
->        write(idele,*)dot_l_MTC
->        write(idele,*)dot_l_CE
->       end if
->       end if
+> c############################################
+> c#   Lambda Controller function             #
+> c############################################
+>       real*8 function STIM_lambda(cm,hsv,lCEdelay,dotlCEdelay,tt,lambda)
+>          dimension cm(*),hsv(*)
+>          real*8 lCEdelay,dotlCEdelay,lambda,tt     
+> c         calc routine only if muscle is longer than the target            
+>           if (lCEdelay.GT.lambda) then
+>           STIM_lambda=(cm(35)*(lCEdelay-lambda)+
+>      1       cm(36)*(dotlCEdelay-dlambda))/cm(10)
+>           if (STIM_lambda.GT.1.0) then
+>             STIM_lambda=1.0
+>           else if (STIM_lambda.LT.0.0) then
+>             STIM_lambda=0.0
+>           else
+>           continue
+>           end if
+>           else 
+>             STIM_lambda=0.0
+>           end if 
 >       return
 >       end
+> c
+> c END OF FUNCTION STIM_LABMDA
+> c
+> c############################################
+> c#   Hybrid Controller function             #
+> c############################################
+>       real*8 function STIM_hybrid(cm,hsv,STIM_open,lambda,dlambda,
+>      1 lCEdelay,dotlCEdelay,tt)
+>          dimension cm(*),hsv(*)
+>          real*8 STIM_open, lambda, dlambda, tt
+>          real*8 lCEdelay, dotlCEdelay
+>           if (lCEdelay.GT.lambda) then
+>           STIM_hybrid=(STIM_open+(cm(35)*(lCEdelay-lambda)
+>      1      +cm(36)*(dotlCEdelay-dlambda))/cm(10))
+>           else 
+>             STIM_hybrid=STIM_open
+>           end if
+>           if (STIM_hybrid.GT.1.0) then
+>             STIM_hybrid=1.0
+>           else if (STIM_hybrid.LT.0.0) then
+>             STIM_hybrid=0.0
+>           end if
+>       return
+>       end
+> c
+> c END OF FUNCTION STIM_HYBRID
+> c
+> c
+> c############################################
+> c#   Reflexive Controller function          #
+> c############################################
+>       real*8 function STIM_reflex(ncycle,cm,hsv,tt)
+>          dimension cm(*),hsv(*)
+>          real*8 tt
+>          integer ncycle
+> c        initialization of strain (hsv(23))
+>          hsv(23) = 0
+> c        initialization of l_CE_ref = l_CE(t=0) OR
+> c        if time < t_PreSim then l_CE_ref = l_CE --> l_CE_ref = l_CE(t=t_PreSim)
+>          if (ncycle.LE.3.OR.tt.LE.cm(38)) then
+>              hsv(22)= hsv(10)         
+>          endif
+> c   hsv(22) (=l_CE_ref) = l_CE(t=t_PreSim) 
+> c   if time > t_PreSim + delay: calc strain (strain = 0 for t<t_PreSim + delay)
+>          if(tt.GT.(cm(38)+cm(37))) then
+> c   hsv(23) (=strain) = (lCEdelay-l_CE_ref)/l_CE_ref
+>           hsv(23) = (hsv(20)-hsv(22))/hsv(22)       
+> c   if strain bigger than threshold --> activate reflex
+>           if (hsv(23).GT.cm(39)) then
+>            STIM_reflex = 1
+> c   if reflex was active and strain bigger than zero --> activate reflex 
+>           elseif (hsv(24).EQ.1.and.hsv(23).GE.0) then
+>            STIM_reflex = 1
+> c   otherwise --> deactivate reflex           
+>           else
+>            STIM_reflex = 0
+>           end if    
+>          end if
+>          hsv(24) = STIM_reflex
+>       return
+>       end
+> c
+> c END OF FUNCTION STIM_reflex
+> c
+> c############################################
+> c#   output subroutine                      #
+> c############################################
+> c
+>       subroutine output(cm,idpart,hsv,tt)
+> c
+>         integer idpart
+>         real*8 tt
+>         dimension cm(*),hsv(*)
+>         character*80 fname,fname1
+> c       create filename musout.[PARTID]
+>         write(fname1,'(I10.10)') idpart
+>         fname = 'musout.'//fname1
+>         if (cm(29).eq.1.or.
+>      1     (cm(33).NE.1.and.cm(33).NE.2.and.cm(33).NE.3.)) then
+> c         write simple output if output option == 1 or controller card is NOT set        
+>           if (hsv(13).eq.0.0) then
+> c          open/create the file under the filename created above
+>            OPEN(86,FILE=fname,FORM='FORMATTED',STATUS='UNKNOWN')
+> c          write header at the beginning
+>            write (86,'('' output for muscle (PartID):'',I10)')idpart
+>            write (86,'(''         time     stim_tot            q''
+>      1       ''        f_mtc         f_ce        f_pee        f_see''
+>      2       ''        f_sde        l_mtc         l_ce'')')
+>            write (86,'(10ES13.5E2)')tt,hsv(2:10)
+>            CLOSE(86)
+>           else
+> c          open/create the file under the filename created above
+>            OPEN(86,FILE=fname,ACCESS='APPEND',FORM='FORMATTED',
+>      1      STATUS='UNKNOWN')
+> c          write normal data without header from now on
+>            write (86,'(10ES13.5E2)')tt,hsv(2:10)
+>            CLOSE(86)
+>           end if
+>         else 
+> c         write extended output if output option == 2 and controller card is set
+>           if (hsv(13).eq.0.0) then
+> c          open/create the file under the filename created above
+>            OPEN(86,FILE=fname,FORM='FORMATTED',STATUS='UNKNOWN')
+> c          write header at the beginning
+>            write (86,'(''advanced output for muscle (PartID):'',I10)')
+>      1      idpart
+>            write (86,'(''         time     stim_tot            q''
+>      1       ''        f_mtc         f_ce        f_pee        f_see''
+>      2       ''        f_sde        l_mtc         l_ce''
+>      3       ''    dot_l_mtc     dot_l_ce     del_l_ce del_dot_l_ce'')')
+>            write (86,'(14ES13.5E2)')tt,hsv(2:10),hsv(11),hsv(12),
+>      1       hsv(20),hsv(21)
+>            CLOSE(86)
+>           else
+> c          open/create the file under the filename created above
+>            OPEN(86,FILE=fname,ACCESS='APPEND',FORM='FORMATTED',
+>      1      STATUS='UNKNOWN')
+> c          write normal data without header from now on
+>            write (86,'(14ES13.5E2)')tt,hsv(2:10),hsv(11),hsv(12),
+>      1       hsv(20),hsv(21)
+>            CLOSE(86)
+>           end if
+>         end if  
+>         return
+>       end
 > c      
+> c END OF SUBROUTINE OUTPUT
 > c
-> c      subroutine delaylCE(i,ncycle,safe,numelb,anzahl,delay
-> c     1 ,delayval,tt)
-> c      real*8, allocatable, dimension(:,:) :: histlCE
-> c      real*8 tt,safe
-> c      integer run,jump, anzahl,numelb,curlCE,i,dessteplCE
-> c      save histlCE,curlCE,dessteplCE
-> c      if (.not. allocated(histlCE)) allocate(histlCE(numelb,anzahl))
-> c      if(ncycle.eq.1.and.i.eq.1) then
-> c      curlCE=0
-> c      end if
-> cc
-> c      if(ncycle.eq.1.and.i.eq.1) then
-> c        run=1
-> c        jump=1
-> c        DO WHILE(run.LE.numelb)
-> c            DO WHILE(jump.LE.anzahl)
-> c                histlCE(run,jump)=0.0
-> c                jump=jump+1
-> c            END DO
-> c            run=run+1
-> c            jump=1
-> c        END DO
-> c      end if
-> cc
-> c      if(i.eq.1) then
-> c        curlCE=curlCE+1
-> c        if(curlCE.gt.anzahl) then
-> c          curlCE=1
-> c        end if
-> c      end if
-> cc
-> c      histlCE(i,curlCE)=safe
-> cc
-> c      if (tt.lt.delay) then
-> c         delayval=histlCE(i,1)
-> c         dessteplCE=1
-> c      else
-> c       dessteplCE=curlCE+1
-> c       if (dessteplCE.gt.anzahl) then
-> c       dessteplCE=1.0
-> c       end if
-> c       delayval=histlCE(i,dessteplCE)
-> c      end if
-> cc     
-> c      return
-> c      end
+> c############################################
+> c#   delaylCE function                      #
+> c############################################
+>       real*8 function delaylCE(ncycle,hsv,cm, idpart,tt)
+>         real*8 tt, lasttime, dt
+>         integer idpart, ncycle
+>         dimension cm(*),hsv(*) 
+>         integer index1,index2,indexr1, indexr2, iter
+> c param declaration
+>          lasttime = hsv(34);
+> c dt = delay/buffersize
+>          dt       = cm(37)/hsv(30);
+>          indexr1  = hsv(32);
+>          indexr2  = hsv(33);
+>          if (ncycle.LE.3) then
+> c  initialization
+> c  set ring buffer values to 0.   
+>           do iter=1,(hsv(30))
+>            hsv(hsv(31)+iter-1) = 0;
+>           enddo
+>          elseif (tt.gt.(lasttime + dt)) then
+>           lasttime = lasttime + dt
+> c   mod ensures jump from end to the beginning of the ringbuffer
+>           indexr1 = mod((hsv(32)+1),(hsv(30)))
+>           indexr2 = mod((hsv(33)+1),(hsv(30)))
+> c   save current lce
+>           index1 = hsv(31) + indexr1
+>           hsv(index1) = hsv(10);
+>          end if
+> c   define absolute index position of current delayedlCE value     
+>          index2 = hsv(31) + indexr2
+> c   return delayedlCE
+>          delaylCE = hsv(index2)       
+>          hsv(34) = lasttime
+>          hsv(32) = indexr1
+>          hsv(33) = indexr2
+>          return
+>       end
 > c
-> c      subroutine delaydotlCE(i,ncycle,safe,numelb,anzahl,delay
-> c     1 ,delayval,tt)
-> c      real*8, allocatable, dimension(:,:) :: histdotlCE
-> c      real*8 tt,safe
-> c      integer run,jump, anzahl,numelb,curdotlCE,i,desstepdotlCE
-> c      save histdotlCE,curdotlCE,desstepdotlCE
-> c      if (.not. allocated(histdotlCE)) 
-> c     1 allocate(histdotlCE(numelb,anzahl))
-> c      if(ncycle.eq.1.and.i.eq.1) then
-> c      curdotlCE=0
-> c      end if
-> cc
-> c      if(ncycle.eq.1.and.i.eq.1) then
-> c        run=1
-> c        jump=1
-> c        DO WHILE(run.LE.numelb)
-> c            DO WHILE(jump.LE.anzahl)
-> c                histdotlCE(run,jump)=0.0
-> c                jump=jump+1
-> c            END DO
-> c            run=run+1
-> c            jump=1
-> c        END DO
-> c      end if
-> cc
-> c      if(i.eq.1) then
-> c        curdotlCE=curdotlCE+1
-> c        if(curdotlCE.gt.anzahl) then
-> c          curdotlCE=1
-> c        end if
-> c      end if
-> cc
-> c      histdotlCE(i,curdotlCE)=safe
-> cc
-> c      if (tt.lt.delay) then
-> c         delayval=histdotlCE(i,1)
-> c         desstepdotlCE=1
-> c      else
-> c       desstepdotlCE=curdotlCE+1
-> c       if (desstepdotlCE.gt.anzahl) then
-> c       desstepdotlCE=1.0
-> c       end if
-> c       delayval=histdotlCE(i,desstepdotlCE)
-> c      end if
-> cc     
-> c      return
-> c      end
+> c END OF FUNCTION DELAYCE
 > c
+> 
+> c############################################
+> c#   delayldotCE function                   #
+> c############################################
+>       real*8 function delaydotlCE(ncycle,hsv,cm, idpart,tt)
+>         real*8 tt,lasttimed,dt
+>         integer idpart, ncycle
+>         dimension cm(*),hsv(*) 
+>         integer indexd1,indexd2,indexdr1,indexdr2,iterd
+> c   ---------initialization ------
+> c   param declaration
+>          lasttimed = hsv(39)
+>          dt        = cm(37)/hsv(30)
+>          indexdr1  = hsv(37)
+>          indexdr2  = hsv(38)
+>          if (ncycle.LE.3) then
+> c   set ring buffer values to 0.   
+>           do iterd=1,(hsv(30))
+>            hsv(hsv(36)+iterd-1) = 0
+>           enddo
+>          elseif (tt.gt.(lasttimed + dt)) then
+>           lasttimed = lasttimed + dt
+> c   mod ensures jump from end to the beginning of the ringbuffer
+>           indexdr1 = mod((hsv(37)+1),(hsv(30)))
+>           indexdr2 = mod((hsv(38)+1),(hsv(30)))
+>           indexd1 = hsv(36) + indexdr1
+> c   save current dot_lce
+>           hsv(indexd1) = hsv(12)
+>          end if
+> c   define absolute index position of current delayeddotlCE value 
+>          indexd2 = hsv(36) + indexdr2
+> c   return delayeddotlCE
+>          delaydotlCE = hsv(indexd2)
+>          hsv(39) = lasttimed
+>          hsv(37) = indexdr1
+>          hsv(38) = indexdr2
+>         return
+>       end
+> c
+> c END OF FUNCTION DELAYDOTLCE
+> c
+> c END OF UMAT41
 > c
