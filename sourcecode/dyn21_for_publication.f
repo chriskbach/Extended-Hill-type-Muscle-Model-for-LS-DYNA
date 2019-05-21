@@ -1,19 +1,19 @@
 c
 c $Id: dyn21.F 96707 2015-03-18 22:29:10Z ubasu $
 c
-[...]
+c [...]
       subroutine urmatt (lft,llt,cm,capa,mt,crv,nnm1,nconstp,npc,plc,
      $     eltype,nbmbwp)
-[...]
+c [...]
 c
 c       call user developed subroutines here
 c
-[...]
+c [...]
    41   call umat41 (lft,cm(mx+1),eps,sig,epsp,hsv,dt1,capa,'tbeam',tt,
      1   temper,failel,crv,a(lcma),0,elsiz,idele,r_mem(dm_x),
      2   r_mem(dm_v),r_mem(dm_a),i,d1,d2,d3,NHISVAR,
      3   no_hsvs)
-[...]
+c [...]
 C
 C
 C % If you use this material model for scientific purposes, please cite
@@ -68,7 +68,7 @@ C % THE POSSIBILITY OF SUCH DAMAGE.
       subroutine umat41 (lft,cm,eps,sig,epsp,hsv,dt1,capa,etype,tt,
      1 temper,failel,crv,cma,qmat,elsiz,idele,x,v,a,i,d1,d2,d3,NHISVAR,
      2 no_hsvs)
-[...]
+c [...]
 c
 c     Extended Hill-type muscle model with a contractile element
 c     a parallel elastic element and serial elastic as well as a
@@ -151,7 +151,7 @@ c     cm(37)=delay of lCEdelay / dotlCEdelay
 c     cm(38)=time till swap from alpha to lambda / t_PreSim for reflexive controller
 c     cm(39)=threshold for reflex controller (e.g. 0.10 for a 10% strain threshold)
 c
-[...]
+c [...]
 c
 c     d1  - strain rate/increment in x  direction, local x for shells
 c     d2  - strain rate/increment in y  direction, local y for shells
@@ -198,7 +198,7 @@ c         hsv(39)   = dotlasttime
 c         hsv(hsv(31):hsv(31)+hsv(30)-1) = ringbuffer_l_CE
 c         hsv(hsv(36):hsv(36)+hsv(30)-1) = ringbuffer_dot_l_CE
 c
-[...]
+c [...]
       include 'nlqparm'
       include 'bk06.inc'
       include 'iounits.inc'
@@ -622,7 +622,7 @@ c     as interval we used [0,elleng], the function to evaluate F(X)
 c     is calc_F_sum(X,elleng,act,cm).
 
 c
-[...]
+c [...]
 c END OF FUNCTION ZEROIN
 c
 c############################################

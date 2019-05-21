@@ -223,7 +223,7 @@
 > c     cm(38)=time till swap from alpha to lambda / t_PreSim for reflexive controller
 > c     cm(39)=threshold for reflex controller (e.g. 0.10 for a 10% strain threshold)
 > c
-> [...]
+> c [...]
 > c
 > c     d1  - strain rate/increment in x  direction, local x for shells
 > c     d2  - strain rate/increment in y  direction, local y for shells
@@ -270,7 +270,7 @@
 > c         hsv(hsv(31):hsv(31)+hsv(30)-1) = ringbuffer_l_CE
 > c         hsv(hsv(36):hsv(36)+hsv(30)-1) = ringbuffer_dot_l_CE
 2500a2606
-> [...]
+> c [...]
 2504c2610,2624
 <       dimension cm(*),eps(*),sig(*),hsv(*),crv(lq1,2,*),cma(*),qmat(3,3)
 ---
@@ -635,7 +635,7 @@
 <         sig(2)=0.0
 <         sig(3)=0.0
 < c
-2610a2898,3412
+2610a2898,3413
 > c END OF SUBROUTINE UMAT41
 > c
 > c############################################
@@ -768,7 +768,8 @@
 > c     is calc_F_sum(X,elleng,act,cm).
 > 
 > c
-> [...]
+> c [...]
+> c 
 > c END OF FUNCTION ZEROIN
 > c
 > c############################################
