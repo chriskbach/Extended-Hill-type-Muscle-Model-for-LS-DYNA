@@ -58,6 +58,8 @@ With modifications it should compile also with other versions of LS-DYNA.
 * total muscle length is set to the part length (enables routing via part_averaged)
 * added internal muscle-level controller (EQ-point theory and reflex)
 * ringbuffer using history variables
+* damping methods removed
+* improved numerical stability, by allowing negative l_ce for extreme slack in the muscles
 
 [v1.0] - 2017-07-12
 * initial muscle model implementation in LS-Dyna 
