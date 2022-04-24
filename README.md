@@ -60,6 +60,7 @@ With modifications it should compile also with other versions of LS-DYNA.
 * ringbuffer using history variables
 * damping methods removed
 * improved numerical stability, by allowing negative l_ce for extreme slack in the muscles
+* [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3142387.svg)](https://doi.org/10.5281/zenodo.3142387)
 
 [v1.0] - 2017-07-12
 * initial muscle model implementation in LS-Dyna 
