@@ -4,7 +4,7 @@ The repository has moved to DaRUS - the Data Repository of the University of Stu
 
 ### Changelog 
 
-[moved repo] - 2022-04-25
+[moved_repo] - 2022-04-25
 * moved to repository to [![DOI](https://img.shields.io/badge/DOI-10.18419%2Fdarus--1144-red.svg)](https://doi.org/10.18419/darus-1144)
 
 [v2.0] - 2019-05-20
